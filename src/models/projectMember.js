@@ -23,7 +23,7 @@ const projectMemberSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: {
-        values: ["project_manager", "developer"],
+        values: ["Project_Manager", "Developer"],
         message: "Project role must be one of: team_lead, associate",
         // note: project_manager and client are NOT here
         // PM has workspace-wide access — no project assignment needed

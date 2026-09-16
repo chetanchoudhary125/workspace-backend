@@ -39,7 +39,12 @@ const activitySchema = new mongoose.Schema(
           "member_removed",
           "project_created",
           "project_deleted",
-          "Role_changed"
+          "Role_changed",
+          "project_updated",
+          "project_member_added",
+          "project_member_removed",
+          "member_role_changed"
+
         ],
         message: "Invalid activity type",
       },

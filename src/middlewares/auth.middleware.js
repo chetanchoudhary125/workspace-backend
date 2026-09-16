@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import sessionModel from "../models/session.js";
 import User from "../models/user.js";
 
-async function verifyToken(req, res, next) {
+async function authenticate(req, res, next) {
   const token = req.cookies.accessToken;
   // Example: Authorization: Bearer <token>
   // const authHeader = req.headers["authorization"]; // get the header
@@ -43,4 +43,4 @@ async function verifyToken(req, res, next) {
   }
 }
 
-export default verifyToken;
+export default authenticate;
