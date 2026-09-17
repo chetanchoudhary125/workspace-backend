@@ -51,6 +51,6 @@ const projectSchema = new mongoose.Schema(
 // index for fast lookup of all projects in a workspace
 projectSchema.index({ workspaceId: 1 });
 
-const Project = mongoose.model("Project", projectSchema);
+const projectModel = mongoose.model("Project", projectSchema);
 
-export default Project;
+export default projectModel;

@@ -24,7 +24,7 @@ const projectMemberSchema = new mongoose.Schema(
       type: String,
       enum: {
         values: ["Project_Manager", "Developer"],
-        message: "Project role must be one of: team_lead, associate",
+        message: "Project role must be one of: Project_Manager, Developer",
         // note: project_manager and client are NOT here
         // PM has workspace-wide access — no project assignment needed
         // Client gets summary access via workspace role alone
@@ -55,5 +55,6 @@ projectMemberSchema.index({ projectId: 1 });
 // index for fast lookup of all projects a user is part of
 projectMemberSchema.index({ userId: 1, workspaceId: 1 });
 
-const ProjectMember = mongoose.model("ProjectMember", projectMemberSchema);
-export default ProjectMember;
+const projectMemberModel = mongoose.model("ProjectMember", projectMemberSchema);
+
+export default projectMemberModel;

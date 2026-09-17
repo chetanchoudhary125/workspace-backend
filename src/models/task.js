@@ -90,6 +90,6 @@ taskSchema.index({ assigneeId: 1, workspaceId: 1 });
 // index for PM dashboard — all tasks across a workspace
 taskSchema.index({ workspaceId: 1 });
 
-const Task = mongoose.model("Task", taskSchema);
+const taskModel = mongoose.model("Task", taskSchema);
 
-export default Task;
+export default taskModel;

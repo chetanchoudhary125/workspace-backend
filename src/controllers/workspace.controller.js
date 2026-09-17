@@ -1,11 +1,12 @@
-import ActivityModel from "../models/activity.js";
-import CommentModel from "../models/comment.js";
-import ProjectModel from "../models/project.js";
-import ProjectMemberModel from "../models/projectMember.js";
-import TaskModel from "../models/task.js";
-import UserModel from "../models/user.js";
-import WorkspaceModel from "../models/workspace.js";
-import WorkspaceMemberModel from "../models/workspaceMember.js";
+import mongoose from "mongoose";
+import activityModel from "../models/activity.js";
+import commentModel from "../models/comment.js";
+import projectModel from "../models/project.js";
+import projectMemberModel from "../models/projectMember.js";
+import taskModel from "../models/task.js";
+import userModel from "../models/user.js";
+import workspaceModel from "../models/workspace.js";
+import workspaceMemberModel from "../models/workspaceMember.js";
 
 export const createWorkspace = async (req, res) => {
   const { name, description } = req.body;
@@ -17,7 +18,7 @@ export const createWorkspace = async (req, res) => {
     });
   }
   try {
-    const alreadyExist = await WorkspaceModel.findOne({
+    const alreadyExist = await workspaceModel.findOne({
       name,
       createdBy: req.userId,
     });
@@ -29,13 +30,13 @@ export const createWorkspace = async (req, res) => {
     }
 
     //creating workspace
-    const workspace = await WorkspaceModel.create({
+    const workspace = await workspaceModel.create({
       name,
       description,
       createdBy: req.userId,
     });
 
-    const WorkspaceMember = await WorkspaceMemberModel.create({
+    const WorkspaceMember = await workspaceMemberModel.create({
       workspaceId: workspace._id,
       userId: req.userId,
       role: "Admin",
@@ -61,7 +62,7 @@ export const getUserWorkspaces = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const memberships = await WorkspaceMemberModel.find({ userId })
+    const memberships = await workspaceMemberModel.find({ userId })
       .populate({
         path: "workspaceId",
         select: "name description createdAt",
@@ -94,7 +95,7 @@ export const getWorkspace = async (req, res) => {
   const userId = req.userId;
 
   try {
-    const workspace = await WorkspaceModel.findOne({ _id: workspaceId }).select(
+    const workspace = await workspaceModel.findOne({ _id: workspaceId }).select(
       ["_id", "name", "description", "createdAt"],
     );
 
@@ -105,7 +106,7 @@ export const getWorkspace = async (req, res) => {
       });
     }
 
-    const findMembers = await WorkspaceMemberModel.find({ workspaceId })
+    const findMembers = await workspaceMemberModel.find({ workspaceId })
       .populate({
         path: "userId",
       })
@@ -163,7 +164,7 @@ export const inviteMember = async (req, res) => {
 
   try {
     // find user to invite
-    const foundUser = await UserModel.findOne({ email });
+    const foundUser = await userModel.findOne({ email });
     if (!foundUser) {
       return res.status(404).json({
         success: false,
@@ -171,7 +172,7 @@ export const inviteMember = async (req, res) => {
       });
     }
     // check for invited user was already a member
-    const isAlreadyAMember = await WorkspaceMemberModel.findOne({
+    const isAlreadyAMember = await workspaceMemberModel.findOne({
       workspaceId,
       userId: foundUser._id,
     });
@@ -182,14 +183,14 @@ export const inviteMember = async (req, res) => {
       });
     }
 
-    const newMember = await WorkspaceMemberModel.create({
+    const newMember = await workspaceMemberModel.create({
       workspaceId,
       userId: foundUser._id,
       role,
       invitedBy: req.userId,
     });
 
-    const newActivity = await ActivityModel.create({
+    const newActivity = await activityModel.create({
       workspaceId,
       projectId: null,
       userId: req.userId,
@@ -232,7 +233,7 @@ export const changeMemberRole = async (req, res) => {
 
   try {
     // finding user in workspaceMember
-    const foundMember = await WorkspaceMemberModel.findOne({
+    const foundMember = await workspaceMemberModel.findOne({
       _id: memberId,
       workspaceId,
     });
@@ -274,7 +275,7 @@ export const removeMember = async (req, res) => {
   try {
     const { workspaceId, memberId } = req.params;
 
-    const foundMember = await WorkspaceMemberModel.findOne({
+    const foundMember = await workspaceMemberModel.findOne({
       _id: memberId,
       workspaceId,
     }).populate("userId", "name email");
@@ -294,11 +295,11 @@ export const removeMember = async (req, res) => {
       });
     }
 
-    await WorkspaceMemberModel.findByIdAndDelete(memberId);
+    await workspaceMemberModel.findByIdAndDelete(memberId);
 
-    await ProjectMemberModel.deleteMany({ workspaceId, userId: foundMember.userId._id })
+    await projectMemberModel.deleteMany({ workspaceId, userId: foundMember.userId._id })
 
-    await ActivityModel.create({
+    await activityModel.create({
       workspaceId,
       projectId: null,
       userId: req.userId,
@@ -326,10 +327,13 @@ export const removeMember = async (req, res) => {
 };
 
 export const deleteWorkspace = async (req, res) => {
+  const session = mongoose.startSession()
+  session.startTransection()
+
   try {
     const { workspaceId } = req.params;
 
-    const workspace = await WorkspaceModel.findOne({
+    const workspace = await workspaceModel.findOne({
       _id: workspaceId,
     });
 
@@ -340,30 +344,35 @@ export const deleteWorkspace = async (req, res) => {
       });
     }
 
-    await CommentModel.deleteMany({ workspaceId });
+    await commentModel.deleteMany({ workspaceId }).session(session);
 
-    await TaskModel.deleteMany({ workspaceId });
+    await taskModel.deleteMany({ workspaceId }).session(session);
 
-    await ActivityModel.deleteMany({ workspaceId });
+    await activityModel.deleteMany({ workspaceId }).session(session);
 
-    await ProjectMemberModel.deleteMany({ workspaceId });
+    await projectMemberModel.deleteMany({ workspaceId }).session(session);
 
-    await ProjectModel.deleteMany({ workspaceId });
+    await projectModel.deleteMany({ workspaceId }).session(session);
 
-    await WorkspaceMemberModel.deleteMany({ workspaceId });
+    await workspaceMemberModel.deleteMany({ workspaceId }).session(session);
 
-    await WorkspaceModel.findOneAndDelete({ _id: workspaceId });
+    await workspaceModel.findOneAndDelete({ _id: workspaceId }).session(session);
+
+    await session.commitTransaction();
 
     res.status(200).json({
       success: true,
       message: "Workspace deleted successfully",
     });
   } catch (error) {
+    await session.abortTransaction()
     console.error("Error in deleting workspace:", error);
     return res.status(500).json({
       success: false,
       message: "Error in deleting workspace",
       error: error.message,
     });
+  } finally {
+     session.endSession()
   }
 };

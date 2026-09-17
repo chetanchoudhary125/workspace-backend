@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/user.js";
+import userModel from "../models/user.js";
 import sessionModel from "../models/session.js";
 import crypto from "crypto";
 
@@ -8,12 +8,12 @@ export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await userModel.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const user = await User.create({ name, email, password }); // hashed automatically by pre-save hook
+    const user = await userModel.create({ name, email, password }); // hashed automatically by pre-save hook
 
     // create the JWT refresh token
     const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -57,7 +57,7 @@ export const register = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "userModel registered successfully",
     });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
@@ -72,7 +72,7 @@ export const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ message: "credentials required" });
     }
-    const user = await User.findOne({ email });
+    const user = await userModel.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "Invalid credentials user not found" });
     }
@@ -145,7 +145,7 @@ export const login = async (req, res) => {
 // req.userId comes from the middleware created for authentication
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("-password");
+    const user = await userModel.findById(req.userId).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

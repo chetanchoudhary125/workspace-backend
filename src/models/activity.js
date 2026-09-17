@@ -71,9 +71,9 @@ activitySchema.index({ projectId: 1, createdAt: -1 });
 // index for filtering by user across a workspace
 activitySchema.index({ workspaceId: 1, userId: 1, createdAt: -1 });
 
-const Activity = mongoose.model("Activity", activitySchema);
+const activityModel = mongoose.model("Activity", activitySchema);
 
-export default Activity;
+export default activityModel;
 
 /*
 ============================================================

@@ -46,5 +46,6 @@ const commentSchema = new mongoose.Schema(
 // index for loading all comments on a task (in order)
 commentSchema.index({ taskId: 1, createdAt: 1 });
 
-const Comment = mongoose.model("Comment", commentSchema);
-export default Comment;
+const commentModel = mongoose.model("Comment", commentSchema);
+
+export default commentModel;

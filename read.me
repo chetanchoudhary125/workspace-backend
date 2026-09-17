@@ -1,0 +1,17 @@
+authMiddleware -
+1: req.user = user;
+2: req.userId = user._id;
+3: req.sessionId = decoded.sessionId;
+
+-----------------------------------------------------------------
+
+checkProjectAccess - 
+1: req.project = project;
+2: req.memberRole = workspaceMember.role;
+3: req.workspaceId = project.workspaceId;
+
+-----------------------------------------------------------------
+
+checkWorksoaceMember - 
+1: req.memberRole = member.role;
+2: req.workspaceMember = member;
