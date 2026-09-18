@@ -90,10 +90,10 @@ export const getWorkspaceProjects = async (req, res) => {
       projects = memberships
         .filter((member) => member.projectId)
         .map((member) => ({
-          _id: m.projectId._id,
-          name: m.projectId.name,
-          status: m.projectId.status,
-          deadline: m.projectId.deadline,
+          _id: member.projectId._id,
+          name: member.projectId.name,
+          status: member.projectId.status,
+          deadline: member.projectId.deadline,
         }));
     } else {
       return res.status(403).json({
@@ -118,7 +118,7 @@ export const getProject = async (req, res) => {
 
     if (req.memberRole === "Viewer") {
       // Count tasks by status
-      const taskCounts = await TaskModel.aggregate([
+      const taskCounts = await taskModel.aggregate([
         { $match: { projectId: project._id } },
         {
           $group: {
@@ -188,7 +188,12 @@ export const updateProject = async (req, res) => {
     const { name, description, status, deadline } = req.body;
 
     // step 1 — at least one field must be present
-    if (!name && !description && !status && !deadline) {
+    if (
+      name === undefined &&
+      description === undefined &&
+      status === undefined &&
+      deadline === undefined
+    ) {
       return res.status(400).json({
         success: false,
         message: "At least one field is required to update",
@@ -196,7 +201,10 @@ export const updateProject = async (req, res) => {
     }
 
     // step 2 — Project_Manager cannot touch name or description
-    if (req.memberRole === "Project_Manager" && (name || description)) {
+    if (
+      req.memberRole === "Project_Manager" &&
+      (name !== undefined || description !== undefined)
+    ) {
       return res.status(403).json({
         success: false,
         message: "Project Managers can only update status and deadline",
@@ -268,7 +276,7 @@ export const updateProject = async (req, res) => {
     // step 7 — log activity
     await activityModel.create({
       workspaceId: req.workspaceId,
-      projectId: null,
+      projectId: project._id,
       userId: req.userId,
       type: "project_updated",
       payload: {
@@ -451,11 +459,13 @@ export const removeProjectMember = async (req, res) => {
   try {
     const { projectId, memberId } = req.params;
 
-  // Finding the project member
-    const projectMember = await projectMemberModel.findOne({
-      _id: memberId,
-      projectId,
-    }).populate("userId", "name email");
+    // Finding the project member
+    const projectMember = await projectMemberModel
+      .findOne({
+        _id: memberId,
+        projectId,
+      })
+      .populate("userId", "name email");
 
     if (!projectMember) {
       return res.status(404).json({
