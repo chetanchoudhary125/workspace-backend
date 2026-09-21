@@ -27,10 +27,12 @@ const activitySchema = new mongoose.Schema(
       enum: {
         values: [
           "task_created",
+          "task_updated",
           "task_status_changed",
           "task_assigned",
           "task_reassigned",
           "task_priority_changed",
+          "task_label_changed",
           "task_deadline_set",
           "task_deleted",
           "comment_added",

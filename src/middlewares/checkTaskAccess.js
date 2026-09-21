@@ -8,7 +8,7 @@ export const checkTaskAccess = async (req, res, next) => {
     const userId = req.userId;
 
     // 1. Find the Task
-    const task = await taskModel.findById(taskId);
+    const task = await taskModel.findById(taskId).select("-updatedAt -__v");
 
     if (!task) {
       return res.status(404).json({
