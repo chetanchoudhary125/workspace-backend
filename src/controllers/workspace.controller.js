@@ -68,6 +68,7 @@ export const getUserWorkspaces = async (req, res) => {
         select: "name description createdAt",
       })
       .lean();
+      console.log(memberships)
     const workspaces = memberships.map((membership) => ({
       _id: membership.workspaceId._id,
       name: membership.workspaceId.name,
@@ -145,12 +146,13 @@ export const inviteMember = async (req, res) => {
       message: "Email and role is required!",
     });
   }
+  
   //check for requested role is allowed or not
   const allowedRoles = ["Developer", "Viewer", "Project_Manager"];
   if (!allowedRoles.includes(role)) {
     return res.status(400).json({
       success: false,
-      message: `Only Developer, Viewer and Project_Manager roles are allowed. "${role}" is not allowed.`,
+      message: `Only Developer, Viewer and Project_Manager roles are allowed . "${role}" is not allowed.`,
     });
   }
 

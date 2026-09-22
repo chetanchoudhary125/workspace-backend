@@ -1,6 +1,8 @@
+import mongoose from "mongoose";
 import activityModel from "../models/activity.js";
 import projectMemberModel from "../models/projectMember.js";
 import taskModel from "../models/task.js";
+import commentModel from "../models/comment.js";
 
 export const createTask = async (req, res) => {
   try {
@@ -161,7 +163,8 @@ export const getTask = async (req, res) => {
 export const updateTask = async (req, res) => {
   try {
     const { taskId } = req.params;
-    const { title, description, priority, label, assigneeId, deadline } = req.body;
+    const { title, description, priority, label, assigneeId, deadline } =
+      req.body;
 
     // step 1 — at least one field required
     if (
@@ -197,7 +200,11 @@ export const updateTask = async (req, res) => {
 
     // step 4 — validate label enum (null is allowed — it means "no label")
     const allowedLabel = ["bug", "feature", "improvement", "chore"];
-    if (label !== undefined && label !== null && !allowedLabel.includes(label)) {
+    if (
+      label !== undefined &&
+      label !== null &&
+      !allowedLabel.includes(label)
+    ) {
       return res.status(400).json({
         success: false,
         message: `Label must be one of: ${allowedLabel.join(", ")}`,
@@ -238,8 +245,8 @@ export const updateTask = async (req, res) => {
     }
 
     // step 7 — compare each field, apply what changed, collect activities to log
-    const changes = {};     // title / description / label → one task_updated event
-    const activities = [];  // everything else gets its own dedicated event
+    const changes = {}; // title / description / label → one task_updated event
+    const activities = []; // everything else gets its own dedicated event
 
     if (title !== undefined && title !== task.title) {
       changes.title = { from: task.title, to: title };
@@ -262,7 +269,12 @@ export const updateTask = async (req, res) => {
         projectId: task.projectId,
         userId: req.userId,
         type: "task_priority_changed",
-        payload: { taskId: task._id, taskTitle: task.title, from: task.priority, to: priority },
+        payload: {
+          taskId: task._id,
+          taskTitle: task.title,
+          from: task.priority,
+          to: priority,
+        },
       });
       task.priority = priority;
     }
@@ -276,14 +288,20 @@ export const updateTask = async (req, res) => {
           projectId: task.projectId,
           userId: req.userId,
           type: "task_deadline_set",
-          payload: { taskId: task._id, taskTitle: task.title, deadline: parsedDeadline },
+          payload: {
+            taskId: task._id,
+            taskTitle: task.title,
+            deadline: parsedDeadline,
+          },
         });
         task.deadline = parsedDeadline;
       }
     }
 
     if (assigneeId !== undefined) {
-      const currentAssigneeId = task.assigneeId ? task.assigneeId.toString() : null;
+      const currentAssigneeId = task.assigneeId
+        ? task.assigneeId.toString()
+        : null;
 
       if (currentAssigneeId !== assigneeId) {
         if (currentAssigneeId === null) {
@@ -302,7 +320,9 @@ export const updateTask = async (req, res) => {
           });
         } else {
           // already assigned → moving to someone else, or clearing it
-          const previousUser = await userModel.findById(task.assigneeId).select("name");
+          const previousUser = await userModel
+            .findById(task.assigneeId)
+            .select("name");
 
           activities.push({
             workspaceId: req.workspaceId,
@@ -313,7 +333,9 @@ export const updateTask = async (req, res) => {
               taskId: task._id,
               taskTitle: task.title,
               from: previousUser ? previousUser.name : "Unassigned",
-              to: newAssigneeMember ? newAssigneeMember.userId.name : "Unassigned",
+              to: newAssigneeMember
+                ? newAssigneeMember.userId.name
+                : "Unassigned",
               fromId: task.assigneeId,
               toId: newAssigneeMember ? newAssigneeMember.userId._id : null,
             },
@@ -366,8 +388,154 @@ export const updateTask = async (req, res) => {
   }
 };
 
-export const updateTaskStatus = async (req, res) => {};
+export const updateTaskStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
 
-export const deleteTask = async (req, res) => {};
+    const allowedStatus = ["backlog", "in_progress", "in_review", "done"];
+    if (!status || !allowedStatus.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Status must be one of: ${allowedStatus.join(", ")}`,
+      });
+    }
 
-export const getMyTasks = async (req, res) => {};
+    // already fetched by checkTaskAccess
+    const task = req.task;
+
+
+    if (
+      req.memberRole === "Developer" &&
+      (!task.assigneeId || task.assigneeId.toString() !== req.userId.toString())
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only update the status of tasks assigned to you",
+      });
+    }
+
+    if (task.status === status) {
+      return res.status(200).json({
+        success: true,
+        message: "No changes made",
+        task,
+      });
+    }
+
+    const previousStatus = task.status;
+    task.status = status;
+    await task.save();
+
+    await activityModel.create({
+      workspaceId: req.workspaceId,
+      projectId: req.projectId,
+      userId: req.userId,
+      type: "task_status_changed",
+      payload: {
+        taskId: task._id,
+        taskTitle: task.title,
+        from: previousStatus,
+        to: status,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Task status updated",
+      task,
+    });
+  } catch (error) {
+    console.error("Error updating task status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating task status",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteTask = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const task = req.task; // already fetched by checkTaskAccess
+    const taskTitle = task.title; // save before the document is gone
+
+    await commentModel.deleteMany({ taskId: task._id }).session(session);
+    await taskModel.findByIdAndDelete(task._id).session(session);
+
+    await activityModel.create(
+      [
+        {
+          workspaceId: req.workspaceId,
+          projectId: req.projectId,
+          userId: req.userId,
+          type: "task_deleted",
+          payload: { taskTitle },
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+
+    return res.status(200).json({
+      success: true,
+      message: "Task deleted successfully",
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error deleting task:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error deleting task",
+      error: error.message,
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
+export const getMyTasks = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { status, priority } = req.query;
+
+    const filter = { assigneeId: req.userId, workspaceId };
+    if (status) filter.status = status;
+    if (priority) filter.priority = priority;
+
+    const tasks = await taskModel
+      .find(filter)
+      .populate("projectId", "name")
+      .lean();
+
+    // priority is a word, not a number — sort it ourselves,
+    // otherwise "critical" ends up after "high" alphabetically
+    const priorityRank = { critical: 0, high: 1, medium: 2, low: 3 };
+
+    tasks.sort((a, b) => {
+      const rankDiff = priorityRank[a.priority] - priorityRank[b.priority];
+      if (rankDiff !== 0) return rankDiff;
+
+      // same priority — earlier deadline first, no-deadline tasks go last
+      if (!a.deadline && !b.deadline) return 0;
+      if (!a.deadline) return 1;
+      if (!b.deadline) return -1;
+      return new Date(a.deadline) - new Date(b.deadline);
+    });
+
+    return res.status(200).json({
+      success: true,
+      tasks,
+    });
+  } catch (error) {
+    console.error("Error fetching my tasks:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching your tasks",
+      error: error.message,
+    });
+  }
+};

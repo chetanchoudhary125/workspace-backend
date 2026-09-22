@@ -5,11 +5,8 @@ async function connectDB() {
     await mongoose.connect(process.env.MONGO_URL);
     console.log("MongoDB connected🚀");
   } catch (error) {
-    res.status(500).json({
-        message:"Error in DB connection",
-        error: error.message
-    })
+    console.error("Error in DB connection", error);
   }
 }
 
-export default connectDB
+export default connectDB;

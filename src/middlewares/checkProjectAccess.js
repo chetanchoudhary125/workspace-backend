@@ -52,9 +52,9 @@ const checkProjectAccess = async (req, res, next) => {
       userId,
     });
     if (!projectMember) {
-      return res.json({
+      return res.status(400).json({
         success: false,
-        message: "You are not assigned to this project",
+        message: "You are not member of this project",
       });
     }
 

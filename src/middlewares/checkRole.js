@@ -8,7 +8,7 @@ const checkRole = (...allowedRoles) => {
 
     if (!allowedRoles.includes(req.memberRole)) {
       return res.status(403).json({
-        message: `Access denied. Required role: ${allowedRoles.join(" or ")}. Your role: ${req.memberRole}`,
+        message: `Access denied. Required role: ${allowedRoles.join(" or ")} to hit the request. Your role: ${req.memberRole}`,
       });
     }
 

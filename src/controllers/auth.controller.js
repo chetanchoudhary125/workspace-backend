@@ -57,10 +57,13 @@ export const register = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "userModel registered successfully",
+      success: true,
+      message: "User registered successfully",
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };
 
@@ -74,7 +77,9 @@ export const login = async (req, res) => {
     }
     const user = await userModel.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "Invalid credentials user not found" });
+      return res
+        .status(404)
+        .json({ message: "Invalid credentials user not found" });
     }
 
     const passwordValid = await user.comparePassword(password);
@@ -83,13 +88,9 @@ export const login = async (req, res) => {
     }
 
     // create the JWT refresh token
-    const refreshToken = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      },
-    );
+    const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     // const isSession = sessionModel.findOne({
     //   user: user._id,
@@ -134,10 +135,12 @@ export const login = async (req, res) => {
       maxAge: 5 * 60 * 1000,
     });
 
-    res.status(200).json({ message: "Login successful" });
+    res.status(200).json({ success: true, message: "Login successful" });
   } catch (err) {
-    console.log(err)
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.log(err);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };
 
@@ -147,12 +150,16 @@ export const getProfile = async (req, res) => {
   try {
     const user = await userModel.findById(req.userId).select("-password");
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    res.status(200).json({ user });
+    res.status(200).json({ success: true, user });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };
 
@@ -163,6 +170,7 @@ export const getNewToken = async (req, res) => {
 
     if (!token) {
       return res.status(400).json({
+        success: false,
         message: "No refresh token found",
       });
     }
@@ -179,19 +187,16 @@ export const getNewToken = async (req, res) => {
     });
     if (!session) {
       return res.status(400).json({
+        success: false,
         message: "unauthorized session already revolked or not found",
       });
     }
 
-    const refreshToken =  jwt.sign(
-      { id: decoded.id },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      },
-    );
+    const refreshToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
-    //new session for refresh token 
+    //new session for refresh token
     const newRefreshTokenHash = crypto
       .createHash("sha256")
       .update(refreshToken)
@@ -228,10 +233,13 @@ export const getNewToken = async (req, res) => {
     await session.deleteOne();
 
     res.status(200).json({
+      success: true,
       message: "New token generated successfully",
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -240,6 +248,7 @@ export const logout = async (req, res) => {
 
   if (!token) {
     return res.status(400).json({
+      success: false,
       message: "unauthorized no token found",
     });
   }
@@ -258,23 +267,25 @@ export const logout = async (req, res) => {
 
     if (!session) {
       return res.status(400).json({
+        success: false,
         message: "invalide refresh token",
       });
     }
 
     // session revoked true here
-    //can undate revoked:true here also so that we can notify user someone unauthorized person try to access private route
+    //can  revoked:true here also so that we can notify user someone unauthorized person try to access private route
     await session.deleteOne();
 
     res.clearCookie("refreshToken");
     res.clearCookie("accessToken");
 
     res.status(200).json({
+      success: true,
       message: "Logout successfully",
     });
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Server error", error: error.message });
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
