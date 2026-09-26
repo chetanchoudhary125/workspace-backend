@@ -26,7 +26,7 @@ function App() {
 
           <Route path="/workspaces" element={<ProtectedRoute><MyWorkspacesPage /></ProtectedRoute>} />
 
-          <Route path="/workspace/:workspaceId" element={<ProtectedRoute><WorkspaceLayout /></ProtectedRoute>}>
+          <Route path="/workspaces/:workspaceId" element={<ProtectedRoute><WorkspaceLayout /></ProtectedRoute>}>
             <Route index element={<WorkspaceProjectsTab />} />
             <Route path="members" element={<WorkspaceMembersTab />} />
             <Route path="activity" element={<WorkspaceActivityTab />} />

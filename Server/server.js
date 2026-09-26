@@ -25,6 +25,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 connectDB();
+console.log("New request recieved")
 
 app.get("/", (req, res) => {
   res.send("API working...");

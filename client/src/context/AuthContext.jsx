@@ -15,6 +15,12 @@ export const AuthProvider = ({ children }) => {
       .finally(() => setLoading(false));
   }, []);
 
+  const register = async (name, email, password) => {
+    await axiosInstance.post("/auth/register", { name, email, password });
+    const res = await axiosInstance.get("/auth/profile");
+    setUser(res.data.user);
+  };
+
   const login = async (email, password) => {
     await axiosInstance.post("/auth/login", { email, password });
     const res = await axiosInstance.get("/auth/profile");
@@ -27,7 +33,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -10,7 +10,7 @@ export const register = async (req, res) => {
 
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: "User already exists " });
     }
 
     const user = await userModel.create({ name, email, password }); // hashed automatically by pre-save hook
@@ -117,7 +117,7 @@ export const login = async (req, res) => {
       { id: user._id, sessionId: session._id },
       process.env.JWT_SECRET,
       {
-        expiresIn: "5m",
+        expiresIn: "5h",
       },
     );
 
@@ -132,7 +132,7 @@ export const login = async (req, res) => {
       httpOnly: true,
       secure: false, // set true once you're running on HTTPS
       sameSite: "strict",
-      maxAge: 5 * 60 * 1000,
+      maxAge: 5 * 60 * 60 * 1000,
     });
 
     res.status(200).json({ success: true, message: "Login successful" });
