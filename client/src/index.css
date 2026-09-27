@@ -3,7 +3,6 @@
 :root {
   font-family: Inter, "Segoe UI", sans-serif;
   color: #0f172a;
-  background: #a5a4a4;
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -16,15 +15,13 @@
   box-sizing: border-box;
 }
 
-html {
-  background: #F7F7F7;
-}
+
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #F7F7F7;
+  background: linear-gradient(to bottom, #F7F7F7 0%, #B2C0DA 100%);
 }
 
 a {
