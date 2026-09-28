@@ -38,6 +38,15 @@ const projectSchema = new mongoose.Schema(
       default: "active",
     },
 
+    priority: {
+      type: String,
+      enum: {
+        values: ["high", "medium", "low"],
+        message: "Priority must be one of: high, medium, low",
+      },
+      default: "high",
+    },
+
     deadline: {
       type: Date,
       default: null, // optional — overall project deadline

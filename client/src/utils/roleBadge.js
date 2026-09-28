@@ -1,16 +1,9 @@
-const ROLE_STYLES = {
-  Admin: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  Project_Manager: "bg-blue-50 text-blue-700 border-blue-200",
-  Developer: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Viewer: "bg-slate-100 text-slate-600 border-slate-200",
+const roleClasses = {
+  Admin: "border border-indigo-200 bg-indigo-50 text-indigo-700",
+  "Project_Manager": "border border-violet-200 bg-violet-50 text-violet-700",
+  Developer: "border border-sky-200 bg-sky-50 text-sky-700",
+  Viewer: "border border-slate-200 bg-slate-100 text-slate-700",
+  Member: "border border-slate-200 bg-slate-100 text-slate-700",
 };
 
-const ROLE_LABELS = {
-  Admin: "Admin",
-  Project_Manager: "Project Manager",
-  Developer: "Developer",
-  Viewer: "Viewer",
-};
-
-export const getRoleBadgeClasses = (role) => ROLE_STYLES[role] || ROLE_STYLES.Viewer;
-export const getRoleLabel = (role) => ROLE_LABELS[role] || role;
+export default roleClasses

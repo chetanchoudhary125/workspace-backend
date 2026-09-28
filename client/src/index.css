@@ -9,21 +9,59 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --app-bg: #eef4ff;
+  --app-bg-2: #f8fafc;
+  --panel: rgba(255, 255, 255, 0.76);
+  --panel-strong: #ffffff;
+  --border: #e2e8f0;
+  --primary: #4f46e5;
+  --primary-strong: #4338ca;
+  --primary-soft: #eef2ff;
+  --accent: #0ea5e9;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --slate-900: #0f172a;
 }
 
 * {
   box-sizing: border-box;
 }
 
-
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: linear-gradient(to bottom, #F7F7F7 0%, #B2C0DA 100%);
+  background:
+    radial-gradient(circle at top left, rgba(79, 70, 229, 0.12), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.08), transparent 28%),
+    linear-gradient(180deg, var(--app-bg) 0%, #f8fafc 42%, #eef2ff 100%);
+  color: var(--slate-900);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(79, 70, 229, 0.18);
+  color: #111827;
 }
 
 a {
   text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    transition-duration: 180ms;
+  }
 }

@@ -1,9 +1,9 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/layout/ProtectedRoute";
-import WorkspaceLayout from "./components/layout/WorkspaceLayout";
-import ProjectLayout from "./components/layout/ProjectLayout";
+import ProtectedRoute from "./layout/ProtectedRoute";
+import WorkspaceLayout from "./layout/WorkspaceLayout";
+import ProjectLayout from "./layout/ProjectLayout";
 
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
@@ -36,7 +36,7 @@ function App() {
               <Route index element={<ProjectBoardTab />} />
               <Route path="members" element={<ProjectMembersTab />} />
               <Route path="activity" element={<ProjectActivityTab />} />
-              <Route path="tasks/:taskId" element={<ProjectBoardTab />} />              
+              <Route path="tasks/:taskId" element={<ProjectBoardTab />} />
             </Route>
           </Route>
         </Routes>

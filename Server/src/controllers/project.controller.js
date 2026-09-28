@@ -10,7 +10,7 @@ import userModel from "../models/user.js";
 
 export const createProject = async (req, res) => {
   try {
-    const { name, description = "" } = req.body;
+    const { name, description = "", priority } = req.body;
     const { workspaceId } = req.params;
     const userId = req.userId;
 
@@ -18,6 +18,14 @@ export const createProject = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Project name is required",
+      });
+    }
+
+    const allowedPriority = ["high", "medium", "low"];
+    if (priority !== undefined && !allowedPriority.includes(priority)) {
+      return res.status(400).json({
+        success: false,
+        message: `Priority must be one of: ${allowedPriority.join(", ")}`,
       });
     }
 
@@ -35,6 +43,7 @@ export const createProject = async (req, res) => {
       description,
       workspaceId,
       createdBy: userId,
+      priority: priority || "high",
       deadline: null,
     });
 
@@ -76,14 +85,14 @@ export const getWorkspaceProjects = async (req, res) => {
     if (memberRole === "Admin" || memberRole === "Viewer") {
       projects = await projectModel
         .find({ workspaceId })
-        .select("_id name status deadline")
+        .select("_id name status priority deadline")
         .lean();
     } else if (memberRole === "Project_Manager" || memberRole === "Developer") {
       const memberships = await projectMemberModel
         .find({ workspaceId, userId })
         .populate({
           path: "projectId",
-          select: "_id name status deadline",
+          select: "_id name status priority deadline",
         })
         .lean();
 
@@ -93,6 +102,7 @@ export const getWorkspaceProjects = async (req, res) => {
           _id: member.projectId._id,
           name: member.projectId.name,
           status: member.projectId.status,
+          priority: member.projectId.priority,
           deadline: member.projectId.deadline,
         }));
     } else {
@@ -149,6 +159,7 @@ export const getProject = async (req, res) => {
           _id: project._id,
           name: project.name,
           status: project.status,
+          priority: project.priority,
           deadline: project.deadline,
           taskCounts: counts,
         },
@@ -165,6 +176,7 @@ export const getProject = async (req, res) => {
       name: project.name,
       description: project.description,
       status: project.status,
+      priority: project.priority,
       deadline: project.deadline,
     };
 
@@ -185,13 +197,14 @@ export const getProject = async (req, res) => {
 export const updateProject = async (req, res) => {
   try {
     const { projectId } = req.params;
-    const { name, description, status, deadline } = req.body;
+    const { name, description, status, priority, deadline } = req.body;
 
     // step 1 — at least one field must be present
     if (
       name === undefined &&
       description === undefined &&
       status === undefined &&
+      priority === undefined &&
       deadline === undefined
     ) {
       return res.status(400).json({
@@ -217,6 +230,14 @@ export const updateProject = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `Status must be one of: ${allowedStatus.join(", ")}`,
+      });
+    }
+
+    const allowedPriority = ["high", "medium", "low"];
+    if (priority !== undefined && !allowedPriority.includes(priority)) {
+      return res.status(400).json({
+        success: false,
+        message: `Priority must be one of: ${allowedPriority.join(", ")}`,
       });
     }
 
@@ -251,6 +272,11 @@ export const updateProject = async (req, res) => {
     if (status !== undefined && status !== project.status) {
       changes.status = { from: project.status, to: status };
       project.status = status;
+    }
+
+    if (priority !== undefined && priority !== project.priority) {
+      changes.priority = { from: project.priority, to: priority };
+      project.priority = priority;
     }
 
     if (

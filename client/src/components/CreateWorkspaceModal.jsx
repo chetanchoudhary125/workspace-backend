@@ -13,7 +13,7 @@ const CreateWorkspaceModal = ({ onClose, onCreated }) => {
     setIsSubmitting(true);
 
     try {
-      await axiosInstance.post("/workspaces", { name, description });
+      await axiosInstance.post("api/workspaces", { name, description });
       onCreated();
     } catch (err) {
       setError(err.response?.data?.message || "Couldn't create the workspace");
