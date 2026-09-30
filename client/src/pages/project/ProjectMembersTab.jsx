@@ -1,24 +1,11 @@
 import { useState } from "react";
-import { UserMinus, UserPlus, Users } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { useOutletContext, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import axiosInstance from "../../API/axiosInstance";
-import Avatar from "../../components/common/Avatar";
-import Badge from "../../components/common/Badge";
-import EmptyState from "../../components/common/EmptyState";
-import AddProjectMemberModal from "../../components/project/AddProjectMemberModal";
 import { useAuth } from "../../context/AuthContext";
-
-const formatJoined = (value) => {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
+import MembersTable from "../../components/common/MembersTable";
+import AddProjectMemberModal from "../../components/project/AddProjectMemberModal";
 
 const ProjectMembersTab = () => {
   const { projectId } = useParams();
@@ -40,8 +27,6 @@ const ProjectMembersTab = () => {
 
   const canRemove = (member) => {
     if (!canManage) return false;
-    const isSelf = member.userId?._id === user?._id;
-    if (isSelf) return false;
     if (isPM && member.role === "Project_Manager") return false;
     return true;
   };
@@ -56,13 +41,11 @@ const ProjectMembersTab = () => {
       return;
     }
 
-    const id = member._id;
     setTableError("");
-    setBusyId(id);
-
+    setBusyId(member._id);
     try {
       await axiosInstance.delete(
-        `/api/projects/${projectId}/members/${id}`
+        `/api/projects/${projectId}/members/${member._id}`
       );
       toast.success("Member removed from project");
       refetchProject?.();
@@ -106,114 +89,35 @@ const ProjectMembersTab = () => {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white/85 shadow-sm">
-        <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/60 px-4 py-3.5 text-slate-700 sm:px-5">
-          <Users className="h-4 w-4" />
-          <span className="text-sm font-medium">
-            {projectMembers.length}{" "}
-            {projectMembers.length === 1 ? "member" : "members"}
-          </span>
-        </div>
-
-        {projectMembers.length === 0 ? (
-          <div className="p-6">
-            <EmptyState
-              icon={Users}
-              title="No project members"
-              description="Add workspace Developers or Project Managers to this project."
-              action={
-                canManage ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsAddOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Add member
-                  </button>
-                ) : null
-              }
-            />
-          </div>
-        ) : (
-          <div className="max-w-full overflow-x-auto overscroll-x-contain">
-            <table className="w-full min-w-155">
-              <thead>
-                <tr className="bg-slate-50/60 text-left text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
-                  <th className="px-4 py-3 sm:px-5">Member</th>
-                  <th className="px-4 py-3 sm:px-5">Role</th>
-                  <th className="px-4 py-3 sm:px-5">Joined</th>
-                  {canManage && (
-                    <th className="px-4 py-3 text-right sm:px-5">
-                      Actions
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {projectMembers.map((member) => {
-                  const isSelf = member.userId?._id === user?._id;
-                  const showRemove = canRemove(member);
-                  const isBusy = busyId === member._id;
-
-                  return (
-                    <tr
-                      key={member._id}
-                      className="text-sm text-slate-700"
-                    >
-                      <td className="px-4 py-4 sm:px-5">
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            name={member.userId?.name || "Unknown"}
-                            size="md"
-                          />
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-slate-900">
-                              {member.userId?.name || "Unknown"}
-                              {isSelf && (
-                                <span className="ml-1.5 text-xs font-normal text-slate-400">
-                                  (you)
-                                </span>
-                              )}
-                            </p>
-                            <p className="truncate text-xs text-slate-500">
-                              {member.userId?.email || "No email"}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-4 sm:px-5">
-                        <Badge type="role" value={member.role} />
-                      </td>
-
-                      <td className="px-4 py-4 text-slate-600 sm:px-5">
-                        {formatJoined(member.createdAt)}
-                      </td>
-
-                      {canManage && (
-                        <td className="px-4 py-4 text-right sm:px-5">
-                          {showRemove && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemove(member)}
-                              disabled={isBusy}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <UserMinus className="h-3.5 w-3.5" />
-                              {isBusy ? "Removing…" : "Remove"}
-                            </button>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <MembersTable
+        members={projectMembers}
+        getMemberUser={(m) => ({
+          id: m._id,
+          name: m.userId?.name,
+          email: m.userId?.email,
+        })}
+        isSelf={(m) => m.userId?._id === user?._id}
+        getJoinedAt={(m) => m.createdAt}
+        roleOptions={null}
+        canRemove={canRemove}
+        onRemove={handleRemove}
+        busyId={busyId}
+        showActions={canManage}
+        emptyTitle="No project members"
+        emptyDescription="Add workspace Developers or Project Managers to this project."
+        emptyAction={
+          canManage ? (
+            <button
+              type="button"
+              onClick={() => setIsAddOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add member
+            </button>
+          ) : null
+        }
+      />
 
       {isAddOpen && (
         <AddProjectMemberModal

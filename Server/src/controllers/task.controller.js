@@ -145,7 +145,7 @@ export const getTask = async (req, res) => {
       { path: "assigneeId", select: "_id name email" },
       { path: "createdBy", select: "_id name email" },
     ]);
-    console.log(task);
+    
     res.status(200).json({
       success: true,
       task,

@@ -1,10 +1,7 @@
-// src/components/TaskDetailPanel.jsx
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 import {
-  CalendarDays,
   Check,
-  Flag,
   Loader2,
   Lock,
   MessageSquare,
@@ -12,21 +9,25 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import axiosInstance from "../../API/axiosInstance.js";
-import Avatar from "../common/Avatar.jsx";
+import axiosInstance from "../../API/axiosInstance";
+import EmptyState from "../common/EmptyState";
+import CommentsSection from "./CommentsSection";
+import TaskPanelMeta from "./TaskPanelMeta";
+import TaskPanelFields from "./TaskPanelFields";
+import { useAuth } from "../../context/AuthContext";
+import { formatDateTime, timeAgo } from "../../utils/dates";
+import { FIELD_INPUT_CLASS, TASK_STATUSES } from "../../utils/task";
 
-import Badge from "../common/Badge.jsx";
-import EmptyState from "../common/EmptyState.jsx";
-import CommentsSection from "./CommentsSection.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
-import { formatDateTime, getDeadlineInfo, timeAgo } from "../../utils/dates.js";
-import {
-  DEADLINE_TONE_CLASSES,
-  FIELD_INPUT_CLASS,
-  TASK_LABELS,
-  TASK_PRIORITIES,
-  TASK_STATUSES,
-} from "../../utils/task.js";
+const emptyDraft = (task) => ({
+  title: task.title || "",
+  description: task.description || "",
+  priority: task.priority || "medium",
+  label: task.label || "",
+  assigneeId: task.assigneeId?._id || "",
+  deadline: task.deadline
+    ? new Date(task.deadline).toISOString().slice(0, 10)
+    : "",
+});
 
 const TaskDetailPanel = ({ taskId, onClose, onChanged }) => {
   const { projectId } = useParams();
@@ -51,16 +52,7 @@ const TaskDetailPanel = ({ taskId, onClose, onChanged }) => {
     try {
       const { data } = await axiosInstance.get(`/api/tasks/${taskId}`);
       setTask(data.task);
-      setDraft({
-        title: data.task.title || "",
-        description: data.task.description || "",
-        priority: data.task.priority || "medium",
-        label: data.task.label || "",
-        assigneeId: data.task.assigneeId?._id || "",
-        deadline: data.task.deadline
-          ? new Date(data.task.deadline).toISOString().slice(0, 10)
-          : "",
-      });
+      setDraft(emptyDraft(data.task));
     } catch (err) {
       setError(err);
     } finally {
@@ -92,7 +84,9 @@ const TaskDetailPanel = ({ taskId, onClose, onChanged }) => {
     const previous = task.status;
     setTask({ ...task, status: next });
     try {
-      await axiosInstance.patch(`/api/tasks/${taskId}/status`, { status: next });
+      await axiosInstance.patch(`/api/tasks/${taskId}/status`, {
+        status: next,
+      });
       const label = TASK_STATUSES.find((s) => s.value === next)?.label;
       toast.success(`Moved to ${label}`);
       onChanged?.();
@@ -126,16 +120,7 @@ const TaskDetailPanel = ({ taskId, onClose, onChanged }) => {
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setDraft({
-      title: task.title || "",
-      description: task.description || "",
-      priority: task.priority || "medium",
-      label: task.label || "",
-      assigneeId: task.assigneeId?._id || "",
-      deadline: task.deadline
-        ? new Date(task.deadline).toISOString().slice(0, 10)
-        : "",
-    });
+    setDraft(emptyDraft(task));
   };
 
   const handleDelete = async () => {
@@ -171,7 +156,9 @@ const TaskDetailPanel = ({ taskId, onClose, onChanged }) => {
               <input
                 type="text"
                 value={draft.title}
-                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                onChange={(e) =>
+                  setDraft({ ...draft, title: e.target.value })
+                }
                 maxLength={200}
                 className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-lg font-semibold text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
               />
@@ -243,25 +230,11 @@ const TaskDetailPanel = ({ taskId, onClose, onChanged }) => {
 
           {!isLoading && !error && task && (
             <>
-              {/* Meta row */}
-              <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
-                {canEditStatus ? (
-                  <select
-                    value={task.status}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    aria-label="Task status"
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                  >
-                    {TASK_STATUSES.map((s) => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <Badge type="taskStatus" value={task.status} />
-                )}
-                <Badge type="priority" value={task.priority} icon={Flag} />
-                {task.label && <Badge type="label" value={task.label} />}
-              </div>
+              <TaskPanelMeta
+                task={task}
+                canEditStatus={canEditStatus}
+                onStatusChange={handleStatusChange}
+              />
 
               {/* Description */}
               <section className="border-b border-slate-200 px-5 py-5 sm:px-6">
@@ -271,7 +244,9 @@ const TaskDetailPanel = ({ taskId, onClose, onChanged }) => {
                 {isEditing ? (
                   <textarea
                     value={draft.description}
-                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                    onChange={(e) =>
+                      setDraft({ ...draft, description: e.target.value })
+                    }
                     rows={5}
                     maxLength={5000}
                     className={`${FIELD_INPUT_CLASS} resize-none`}
@@ -282,112 +257,19 @@ const TaskDetailPanel = ({ taskId, onClose, onChanged }) => {
                     {task.description}
                   </p>
                 ) : (
-                  <p className="text-sm text-slate-400">No description yet.</p>
+                  <p className="text-sm text-slate-400">
+                    No description yet.
+                  </p>
                 )}
               </section>
 
-              {/* Details grid */}
-              <section className="grid grid-cols-1 gap-4 border-b border-slate-200 px-5 py-5 sm:grid-cols-2 sm:px-6">
-                {/* Assignee */}
-                <div>
-                  <h3 className="mb-1.5 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                    Assignee
-                  </h3>
-                  {isEditing ? (
-                    <select
-                      value={draft.assigneeId}
-                      onChange={(e) => setDraft({ ...draft, assigneeId: e.target.value })}
-                      className={FIELD_INPUT_CLASS}
-                    >
-                      <option value="">Unassigned</option>
-                      {projectMembers.map((m) => {
-                        const uid = m.userId?._id || m.userId;
-                        return (
-                          <option key={uid} value={uid}>
-                            {m.userId?.name || "Unknown"}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  ) : task.assigneeId?.name ? (
-                    <div className="flex items-center gap-2">
-                      <Avatar name={task.assigneeId.name} size="sm" />
-                      <span className="text-sm font-medium text-slate-800">
-                        {task.assigneeId.name}
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-400">Unassigned</p>
-                  )}
-                </div>
-
-                {/* Priority */}
-                <div>
-                  <h3 className="mb-1.5 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                    Priority
-                  </h3>
-                  {isEditing ? (
-                    <select
-                      value={draft.priority}
-                      onChange={(e) => setDraft({ ...draft, priority: e.target.value })}
-                      className={FIELD_INPUT_CLASS}
-                    >
-                      {TASK_PRIORITIES.map((p) => (
-                        <option key={p} value={p}>
-                          {p.charAt(0).toUpperCase() + p.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <Badge type="priority" value={task.priority} icon={Flag} />
-                  )}
-                </div>
-
-                {/* Label */}
-                <div>
-                  <h3 className="mb-1.5 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                    Label
-                  </h3>
-                  {isEditing ? (
-                    <select
-                      value={draft.label}
-                      onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-                      className={FIELD_INPUT_CLASS}
-                    >
-                      {TASK_LABELS.map((l) => (
-                        <option key={l.value} value={l.value}>{l.label}</option>
-                      ))}
-                    </select>
-                  ) : task.label ? (
-                    <Badge type="label" value={task.label} />
-                  ) : (
-                    <p className="text-sm text-slate-400">None</p>
-                  )}
-                </div>
-
-                {/* Deadline */}
-                <div>
-                  <h3 className="mb-1.5 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                    Deadline
-                  </h3>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      value={draft.deadline}
-                      onChange={(e) => setDraft({ ...draft, deadline: e.target.value })}
-                      className={FIELD_INPUT_CLASS}
-                    />
-                  ) : (() => {
-                    const info = getDeadlineInfo(task.deadline, task.status === "done");
-                    return (
-                      <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${DEADLINE_TONE_CLASSES[info.tone]}`}>
-                        <CalendarDays className="h-4 w-4" />
-                        {info.full || "No deadline"}
-                      </span>
-                    );
-                  })()}
-                </div>
-              </section>
+              <TaskPanelFields
+                task={task}
+                isEditing={isEditing}
+                draft={draft}
+                setDraft={setDraft}
+                projectMembers={projectMembers}
+              />
 
               {/* Meta footer */}
               <section className="border-b border-slate-200 px-5 py-3 text-xs text-slate-500 sm:px-6">
@@ -396,7 +278,6 @@ const TaskDetailPanel = ({ taskId, onClose, onChanged }) => {
                   ` · Updated ${timeAgo(task.updatedAt)}`}
               </section>
 
-              {/* Comments */}
               <CommentsSection
                 taskId={taskId}
                 user={user}

@@ -68,7 +68,7 @@ export const getUserWorkspaces = async (req, res) => {
         select: "name description createdAt",
       })
       .lean();
-      console.log(memberships)
+     
     const workspaces = memberships.map((membership) => ({
       _id: membership.workspaceId._id,
       name: membership.workspaceId.name,
@@ -330,8 +330,8 @@ export const removeMember = async (req, res) => {
 };
 
 export const deleteWorkspace = async (req, res) => {
-  const session = mongoose.startSession()
-  session.startTransection()
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
     const { workspaceId } = req.params;
@@ -376,6 +376,6 @@ export const deleteWorkspace = async (req, res) => {
       error: error.message,
     });
   } finally {
-     session.endSession()
+    await session.endSession();
   }
 };

@@ -5,11 +5,6 @@ import PageHeader from "../../components/common/PageHeader";
 import EmptyState from "../../components/common/EmptyState";
 import { getDeadlineInfo } from "../../utils/dates";
 
-const STATUS_ACCENT = {
-  active: "from-emerald-400 to-emerald-500",
-  on_hold: "from-amber-400 to-amber-500",
-  completed: "from-slate-300 to-slate-400",
-};
 
 const toneClass = {
   overdue: "text-red-600",
@@ -91,8 +86,6 @@ const WorkspaceProjectsTab = () => {
               project.deadline,
               project.status === "completed"
             );
-            const accent =
-              STATUS_ACCENT[project.status] || "from-slate-300 to-slate-400";
 
             return (
               <Link
