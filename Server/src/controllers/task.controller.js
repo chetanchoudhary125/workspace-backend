@@ -3,6 +3,7 @@ import activityModel from "../models/activity.js";
 import projectMemberModel from "../models/projectMember.js";
 import taskModel from "../models/task.js";
 import commentModel from "../models/comment.js";
+import userModel from "../models/user.js";
 
 export const createTask = async (req, res) => {
   try {

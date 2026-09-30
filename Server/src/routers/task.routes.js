@@ -23,7 +23,7 @@ router.get("/workspaces/:workspaceId/my-tasks", authenticate, checkWorkspaceMemb
 //Comment routes 
 router.post("/tasks/:taskId/comments", authenticate, checkTaskAccess, checkRole("Admin", "Project_Manager", "Developer"), addComment);
 router.get("/tasks/:taskId/comments", authenticate, checkTaskAccess, checkRole("Admin", "Project_Manager", "Developer"), getTaskComments);
-router.delete("/tasks/:taskId/comments/:commentId", authenticate, checkTaskAccess, checkRole("Admin", "Project_Manager", "Developer"), deleteComment);
+router.delete("/tasks/:taskId/comments/:commentId", authenticate, checkTaskAccess, checkRole("Admin", "Project_Manager"), deleteComment);
 
 
 

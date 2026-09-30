@@ -7,9 +7,9 @@ import authenticate from "../middlewares/auth.middleware.js";
 
 router.post("/register", register);
 router.post("/login", login);
-router.get("/profile", authenticate, getProfile);
-router.get("/refresh-token", getNewToken);
 router.post("/logout", logout);
 router.get("/logout", logout);
-
+router.get("/profile", authenticate, getProfile);
+router.get("/refresh-token", getNewToken);
+router.post("/refresh", getNewToken);
 export default router;

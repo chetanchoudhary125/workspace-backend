@@ -3,6 +3,14 @@ import userModel from "../models/user.js";
 import sessionModel from "../models/session.js";
 import crypto from "crypto";
 
+const isProd = process.env.NODE_ENV === "production";
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: isProd ? "none" : "lax",
+};
+
 // REGISTER
 export const register = async (req, res) => {
   try {
@@ -44,15 +52,11 @@ export const register = async (req, res) => {
     );
 
     res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false, // set true when running on HTTPS
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 5 * 60 * 1000,
     });
 
@@ -122,16 +126,12 @@ export const login = async (req, res) => {
     );
 
     res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false, // set true once you're running on HTTPS
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: false, // set true once you're running on HTTPS
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 5 * 60 * 60 * 1000,
     });
 
@@ -217,15 +217,11 @@ export const getNewToken = async (req, res) => {
     );
 
     res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false, //true when using https
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: false, // true when using https
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 5 * 60 * 1000,
     });
 
@@ -276,8 +272,8 @@ export const logout = async (req, res) => {
     //can  revoked:true here also so that we can notify user someone unauthorized person try to access private route
     await session.deleteOne();
 
-    res.clearCookie("refreshToken");
-    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie("accessToken", cookieOptions);
 
     res.status(200).json({
       success: true,
