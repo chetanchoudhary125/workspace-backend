@@ -114,6 +114,7 @@ export const getWorkspace = async (req, res) => {
       .lean();
 
     const members = findMembers.map((member) => ({
+      memberId: member._id,
       _id: member.userId._id,
       name: member.userId.name,
       email: member.userId.email,

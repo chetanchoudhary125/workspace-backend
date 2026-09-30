@@ -1,5 +1,6 @@
 import express from "express"
 import { changeMemberRole, createWorkspace, deleteWorkspace, getUserWorkspaces, getWorkspace, inviteMember, removeMember } from "../controllers/workspace.controller.js";
+import { getWorkspaceActivity } from "../controllers/activityController.js";
 import authenticate from "../middlewares/auth.middleware.js";
 import checkWorkspaceMember from "../middlewares/checkWorkspaceMember.js";
 import checkRole from "../middlewares/checkRole.js";
@@ -12,6 +13,7 @@ router.post("/workspaces",authenticate, createWorkspace)
 router.get("/workspaces", authenticate, getUserWorkspaces)
 
 router.get("/workspaces/:workspaceId", authenticate, checkWorkspaceMember, getWorkspace)
+router.get("/workspaces/:workspaceId/activity", authenticate, checkWorkspaceMember, checkRole("Admin", "Project_Manager", "Developer"), getWorkspaceActivity)
 
 router.post("/workspaces/:workspaceId/invite", authenticate, checkWorkspaceMember, checkRole( "Admin", "Project_Manager"),  inviteMember)
 

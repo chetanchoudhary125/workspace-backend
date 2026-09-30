@@ -10,7 +10,7 @@ import userModel from "../models/user.js";
 
 export const createProject = async (req, res) => {
   try {
-    const { name, description = "", priority } = req.body;
+    const { name, description = "", priority , deadline} = req.body;
     const { workspaceId } = req.params;
     const userId = req.userId;
 
@@ -29,6 +29,17 @@ export const createProject = async (req, res) => {
       });
     }
 
+     let parsedDeadline = null;
+    if (deadline) {
+      parsedDeadline = new Date(deadline);
+      if (isNaN(parsedDeadline.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Deadline must be a valid date",
+        });
+      }
+    }
+
     const workspace = await workspaceModel.findById(workspaceId);
 
     if (!workspace) {
@@ -44,7 +55,7 @@ export const createProject = async (req, res) => {
       workspaceId,
       createdBy: userId,
       priority: priority || "high",
-      deadline: null,
+      deadline: parsedDeadline,
     });
 
     await activityModel.create({
@@ -85,14 +96,14 @@ export const getWorkspaceProjects = async (req, res) => {
     if (memberRole === "Admin" || memberRole === "Viewer") {
       projects = await projectModel
         .find({ workspaceId })
-        .select("_id name status priority deadline")
+        .select("_id name status description priority deadline")
         .lean();
     } else if (memberRole === "Project_Manager" || memberRole === "Developer") {
       const memberships = await projectMemberModel
         .find({ workspaceId, userId })
         .populate({
           path: "projectId",
-          select: "_id name status priority deadline",
+          select: "_id name description status priority deadline",
         })
         .lean();
 
@@ -101,6 +112,7 @@ export const getWorkspaceProjects = async (req, res) => {
         .map((member) => ({
           _id: member.projectId._id,
           name: member.projectId.name,
+          description : member.projectId.description,
           status: member.projectId.status,
           priority: member.projectId.priority,
           deadline: member.projectId.deadline,
