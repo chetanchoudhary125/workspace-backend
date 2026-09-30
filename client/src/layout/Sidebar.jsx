@@ -1,5 +1,13 @@
 import { NavLink, useParams } from "react-router-dom";
-import { Activity, FolderKanban, ListTodo, Plus, Users, X } from "lucide-react";
+import {
+  Activity,
+  ArrowLeft,
+  FolderKanban,
+  ListTodo,
+  Plus,
+  Users,
+  X,
+} from "lucide-react";
 
 const linkBase =
   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition";
@@ -69,6 +77,15 @@ const Sidebar = ({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <NavLink
+            to="/workspaces"
+            className={linkClass}
+            onClick={onClose}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            All workspaces
+          </NavLink>
+
           <div className="space-y-1">
             <NavLink to={base} end className={linkClass} onClick={onClose}>
               <FolderKanban className="h-4 w-4" />
