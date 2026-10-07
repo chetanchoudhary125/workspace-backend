@@ -169,7 +169,7 @@ export const getNewToken = async (req, res) => {
     const token = req.cookies.refreshToken;
 
     if (!token) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "No refresh token found",
       });
@@ -186,9 +186,9 @@ export const getNewToken = async (req, res) => {
       revoked: false,
     });
     if (!session) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
-        message: "unauthorized session already revolked or not found",
+        message: "Refresh session is invalid or expired",
       });
     }
 
@@ -233,6 +233,13 @@ export const getNewToken = async (req, res) => {
       message: "New token generated successfully",
     });
   } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired refresh token",
+      });
+    }
+
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });

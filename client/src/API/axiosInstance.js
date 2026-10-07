@@ -8,17 +8,27 @@ const axiosInstance = axios.create({
 // One shared in-flight refresh promise so parallel 401s don't fire N refreshes.
 let refreshPromise = null;
 
+const isAuthEndpoint = (url) => {
+  const path = url?.split("?")[0].replace(/\/+$/, "");
+  return [
+    "/auth/login",
+    "/auth/register",
+    "/auth/logout",
+    "/auth/refresh",
+    "/auth/refresh-token",
+  ].some((endpoint) => path?.endsWith(endpoint));
+};
+
 axiosInstance.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
     const status = error.response?.status;
 
-    // Only handle expired-access-token 401s. Skip auth endpoints and retries.
     if (
       status !== 401 ||
       original?._retry ||
-      original?.url?.includes("/auth/")
+      isAuthEndpoint(original?.url)
     ) {
       return Promise.reject(error);
     }
@@ -34,7 +44,9 @@ axiosInstance.interceptors.response.use(
       await refreshPromise;
       return axiosInstance(original);
     } catch (refreshError) {
-      window.location.href = "/login";
+      if (!["/login", "/register"].includes(window.location.pathname)) {
+        window.location.href = "/login";
+      }
       return Promise.reject(refreshError);
     }
   },
