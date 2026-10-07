@@ -169,7 +169,7 @@ export const getNewToken = async (req, res) => {
     const token = req.cookies.refreshToken;
 
     if (!token) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "No refresh token found",
       });
@@ -186,7 +186,7 @@ export const getNewToken = async (req, res) => {
       revoked: false,
     });
     if (!session) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "unauthorized session already revolked or not found",
       });
