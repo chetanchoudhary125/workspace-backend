@@ -188,7 +188,7 @@ export const getNewToken = async (req, res) => {
     if (!session) {
       return res.status(401).json({
         success: false,
-        message: "Refresh session is invalid or expired",
+        message: "unauthorized session already revolked or not found",
       });
     }
 
@@ -233,13 +233,6 @@ export const getNewToken = async (req, res) => {
       message: "New token generated successfully",
     });
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid or expired refresh token",
-      });
-    }
-
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });

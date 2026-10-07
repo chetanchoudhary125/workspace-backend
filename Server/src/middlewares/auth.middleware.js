@@ -22,7 +22,7 @@ async function authenticate(req, res, next) {
     });
     if (!session) {
       return res
-        .status(401)
+        .status(403)
         .json({ message: "Session expired, please login again" });
     }
 
